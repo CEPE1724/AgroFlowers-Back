@@ -1,0 +1,310 @@
+services:
+
+  postgres-keycloak-agro:
+    image: postgres:16
+    container_name: postgres-keycloak-agro
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak_pass
+    volumes:
+      - keycloak-agro-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - agro-network
+
+  keycloak-agro:
+    image: quay.io/keycloak/keycloak:25.0
+    container_name: keycloak-agro
+    restart: unless-stopped
+    command: start-dev
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres-keycloak-agro:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak_pass
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: http://localhost:8380
+    ports:
+      - "8380:8080"
+    volumes:
+      - ./keycloak-theme/agroflowers:/opt/keycloak/themes/agroflowers:ro
+    depends_on:
+      postgres-keycloak-agro:
+        condition: service_healthy
+    networks:
+      - agro-network
+
+  redis-agro:
+    image: redis:7-alpine
+    container_name: redis-agro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - agro-network
+
+  postgres-catalog:
+    image: postgres:16
+    container_name: postgres-catalog
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: catalog_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+    ports:
+      - "5435:5432"
+    volumes:
+      - catalog-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d catalog_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - agro-network
+
+  catalog-service:
+    build:
+      context: ./catalog-service
+      dockerfile: Dockerfile
+    container_name: catalog-service
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-catalog:5432/catalog_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 12345
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8380/realms/agroflowers-realm
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak-agro:8080/realms/agroflowers-realm/protocol/openid-connect/certs
+      SPRING_DATA_REDIS_HOST: redis-agro
+      SPRING_DATA_REDIS_PORT: 6379
+    depends_on:
+      postgres-catalog:
+        condition: service_healthy
+      keycloak-agro:
+        condition: service_started
+      redis-agro:
+        condition: service_healthy
+    networks:
+      - agro-network
+
+  postgres-purchase:
+    image: postgres:16
+    container_name: postgres-purchase
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: purchase_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+    ports:
+      - "5436:5432"
+    volumes:
+      - purchase-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d purchase_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - agro-network
+
+  purchase-service:
+    build:
+      context: ./purchase-service
+      dockerfile: Dockerfile
+    container_name: purchase-service
+    restart: unless-stopped
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-purchase:5432/purchase_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 12345
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8380/realms/agroflowers-realm
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak-agro:8080/realms/agroflowers-realm/protocol/openid-connect/certs
+      CATALOG_SERVICE_BASE_URL: http://catalog-service:8083
+    depends_on:
+      postgres-purchase:
+        condition: service_healthy
+      keycloak-agro:
+        condition: service_started
+      catalog-service:
+        condition: service_started
+    networks:
+      - agro-network
+
+  postgres-logistics:
+    image: postgres:16
+    container_name: postgres-logistics
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: logistics_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+    ports:
+      - "5437:5432"
+    volumes:
+      - logistics-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d logistics_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - agro-network
+
+  logistics-service:
+    build:
+      context: ./logistics-service
+      dockerfile: Dockerfile
+    container_name: logistics-service
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-logistics:5432/logistics_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 12345
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8380/realms/agroflowers-realm
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak-agro:8080/realms/agroflowers-realm/protocol/openid-connect/certs
+      CATALOG_SERVICE_BASE_URL: http://catalog-service:8083
+    depends_on:
+      postgres-logistics:
+        condition: service_healthy
+      keycloak-agro:
+        condition: service_started
+      catalog-service:
+        condition: service_started
+    networks:
+      - agro-network
+
+  postgres-sales:
+    image: postgres:16
+    container_name: postgres-sales
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sales_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+    ports:
+      - "5438:5432"
+    volumes:
+      - sales-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d sales_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - agro-network
+
+  sales-service:
+    build:
+      context: ./sales-service
+      dockerfile: Dockerfile
+    container_name: sales-service
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-sales:5432/sales_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 12345
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8380/realms/agroflowers-realm
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak-agro:8080/realms/agroflowers-realm/protocol/openid-connect/certs
+      LOGISTICS_SERVICE_BASE_URL: http://logistics-service:8085
+    depends_on:
+      postgres-sales:
+        condition: service_healthy
+      keycloak-agro:
+        condition: service_started
+      logistics-service:
+        condition: service_started
+    networks:
+      - agro-network
+
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    restart: unless-stopped
+    ports:
+      - "8087:8087"
+    environment:
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8380/realms/agroflowers-realm
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak-agro:8080/realms/agroflowers-realm/protocol/openid-connect/certs
+      KEYCLOAK_SERVER_URL: http://keycloak-agro:8080
+      KEYCLOAK_REALM: agroflowers-realm
+      KEYCLOAK_ADMIN_CLIENT_ID: agroflowers-admin-client
+      KEYCLOAK_ADMIN_CLIENT_SECRET: HUpPYRoQQFk4UVJ1lJWntBZNHWY6XFaY
+      KEYCLOAK_LOGIN_CLIENT_ID: agroflowers-service-client
+      KEYCLOAK_LOGIN_CLIENT_SECRET: AQhIbs5ZBW059xYG1czX3QlSlH6XNfxa
+    depends_on:
+      keycloak-agro:
+        condition: service_started
+    networks:
+      - agro-network
+
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: ai-service
+    restart: unless-stopped
+    ports:
+      - "8088:8088"
+    environment:
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8380/realms/agroflowers-realm
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak-agro:8080/realms/agroflowers-realm/protocol/openid-connect/certs
+      SALES_SERVICE_BASE_URL: http://sales-service:8086
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      OLLAMA_MODEL: gemma3:4b
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      keycloak-agro:
+        condition: service_started
+      sales-service:
+        condition: service_started
+    networks:
+      - agro-network
+
+  nginx-agro:
+    image: nginx:1.27-alpine
+    container_name: nginx-gateway-agro
+    restart: unless-stopped
+    ports:
+      - "8091:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - catalog-service
+      - purchase-service
+      - logistics-service
+      - sales-service
+      - auth-service
+    networks:
+      - agro-network
+
+volumes:
+  keycloak-agro-postgres-data:
+  catalog-postgres-data:
+  purchase-postgres-data:
+  logistics-postgres-data:
+  sales-postgres-data:
+
+networks:
+  agro-network:
+    driver: bridge

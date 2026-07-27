@@ -1,0 +1,661 @@
+{
+  "info": {
+    "_postman_id": "a6f2f3d0-6f2a-4f0e-9b1a-agroflowers001",
+    "name": "AgroFlowers AI - API",
+    "description": "Colección completa de endpoints de los 6 microservicios de negocio de AgroFlowers AI, organizada por carpetas. Todas las peticiones pasan por el gateway Nginx (http://localhost:8091). Antes de probar cualquier endpoint protegido, ejecuta una de las peticiones de la carpeta 'Autenticación' — el token se guarda automáticamente en la variable de colección {{token}} y el resto de peticiones ya lo usan como Bearer.\n\nNOTA IMPORTANTE SOBRE 2FA: todos los roles tienen TOTP obligatorio en Keycloak. El endpoint /api/auth/login (Direct Access Grant) puede rechazar el login si el usuario tiene un segundo factor pendiente de configurar. Para pruebas en Postman usa un usuario cuyo TOTP ya esté configurado, o crea un usuario de prueba y complétalo una vez desde el navegador antes de usarlo aquí.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "gatewayUrl", "value": "http://localhost:8091", "type": "string" },
+    { "key": "keycloakUrl", "value": "http://localhost:8380", "type": "string" },
+    { "key": "realm", "value": "agroflowers-realm", "type": "string" },
+    { "key": "clientId", "value": "agroflowers-service-client", "type": "string" },
+    { "key": "clientSecret", "value": "AQhIbs5ZBW059xYG1czX3QlSlH6XNfxa", "type": "string" },
+    { "key": "username", "value": "coloca-un-usuario-valido", "type": "string" },
+    { "key": "password", "value": "coloca-su-password", "type": "string" },
+    { "key": "token", "value": "", "type": "string" },
+    { "key": "farmId", "value": "1", "type": "string" },
+    { "key": "flowerId", "value": "34", "type": "string" },
+    { "key": "purchaseId", "value": "1", "type": "string" },
+    { "key": "shipmentId", "value": "1", "type": "string" },
+    { "key": "saleId", "value": "1", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "01 - Autenticación",
+      "item": [
+        {
+          "name": "Login directo en Keycloak (recomendado para Postman)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "grant_type", "value": "password", "type": "text" },
+                { "key": "client_id", "value": "{{clientId}}", "type": "text" },
+                { "key": "client_secret", "value": "{{clientSecret}}", "type": "text" },
+                { "key": "username", "value": "{{username}}", "type": "text" },
+                { "key": "password", "value": "{{password}}", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token",
+              "host": ["{{keycloakUrl}}"],
+              "path": ["realms", "{{realm}}", "protocol", "openid-connect", "token"]
+            },
+            "description": "Obtiene el JWT directamente de Keycloak (Direct Access Grant). Rechazado (400/401) si el usuario tiene TOTP pendiente de configurar."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    pm.collectionVariables.set('token', json.access_token);",
+                  "    console.log('Token guardado en {{token}}');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login vía auth-service",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/api/auth/login",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "PÚBLICO. Fachada de auth-service sobre Keycloak. Misma limitación de TOTP que el login directo."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    pm.collectionVariables.set('token', json.accessToken);",
+                  "    console.log('Token guardado en {{token}}');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registrar usuario (autoregistro, rol OPERADOR fijo)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"nuevo.operador\",\n  \"email\": \"nuevo.operador@agroflowers.com\",\n  \"firstName\": \"Nuevo\",\n  \"lastName\": \"Operador\",\n  \"password\": \"Password123!\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/api/auth/register",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "PÚBLICO. Crea el usuario en Keycloak y le asigna el rol OPERADOR automáticamente (hardcodeado en el backend)."
+          }
+        },
+        {
+          "name": "Crear usuario (solo ADMIN, rol SUPERVISOR o ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"nueva.supervisora\",\n  \"email\": \"nueva.supervisora@agroflowers.com\",\n  \"firstName\": \"Nueva\",\n  \"lastName\": \"Supervisora\",\n  \"password\": \"Password123!\",\n  \"role\": \"SUPERVISOR\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/api/admin/users",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "admin", "users"]
+            },
+            "description": "Rol requerido: ADMIN. El campo role solo acepta SUPERVISOR o ADMIN (validado por regex en el backend)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Catálogo - Fincas",
+      "item": [
+        {
+          "name": "Listar fincas (paginado)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/farms?page=1&pageSize=10",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "farms"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" },
+                { "key": "search", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Roles: ADMIN, SUPERVISOR, OPERADOR"
+          }
+        },
+        {
+          "name": "Listar todas las fincas (sin paginar)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/farms/all",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "farms", "all"]
+            },
+            "description": "Roles: ADMIN, SUPERVISOR, OPERADOR"
+          }
+        },
+        {
+          "name": "Obtener finca por ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/farms/{{farmId}}",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "farms", "{{farmId}}"]
+            },
+            "description": "Roles: ADMIN, SUPERVISOR, OPERADOR"
+          }
+        },
+        {
+          "name": "Crear finca (código autogenerado)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Finca Nueva Esperanza\",\n  \"ruc\": \"1790012345001\",\n  \"contactName\": \"Maria Fernanda Cruz\",\n  \"phone\": \"0991234567\",\n  \"email\": \"contacto@nuevaesperanza.com\",\n  \"city\": \"Cayambe\",\n  \"province\": \"Pichincha\",\n  \"address\": \"Via Cayambe km 5\",\n  \"creditDays\": 30,\n  \"rating\": \"BUENA\",\n  \"status\": \"ACTIVE\",\n  \"observation\": \"Proveedor nuevo, en periodo de prueba\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/api/farms",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "farms"]
+            },
+            "description": "Rol requerido: ADMIN. El código FIN-XXX se genera automáticamente, no se envía. rating: EXCELENTE|BUENA|REGULAR|MALA. status: ACTIVE|INACTIVE."
+          }
+        },
+        {
+          "name": "Actualizar finca",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Finca Nueva Esperanza\",\n  \"ruc\": \"1790012345001\",\n  \"contactName\": \"Maria Fernanda Cruz\",\n  \"phone\": \"0991234567\",\n  \"email\": \"contacto@nuevaesperanza.com\",\n  \"city\": \"Cayambe\",\n  \"province\": \"Pichincha\",\n  \"address\": \"Via Cayambe km 5\",\n  \"creditDays\": 45,\n  \"rating\": \"EXCELENTE\",\n  \"status\": \"ACTIVE\",\n  \"observation\": \"Ascendio de calificacion tras 6 meses\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/api/farms/{{farmId}}",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "farms", "{{farmId}}"]
+            },
+            "description": "Rol requerido: ADMIN"
+          }
+        },
+        {
+          "name": "Desactivar finca (baja lógica)",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/farms/{{farmId}}/deactivate",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "farms", "{{farmId}}", "deactivate"]
+            },
+            "description": "Rol requerido: ADMIN"
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Catálogo - Flores",
+      "item": [
+        {
+          "name": "Listar flores (paginado)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/flowers?page=1&pageSize=10",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "flowers"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" },
+                { "key": "search", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Roles: ADMIN, SUPERVISOR, OPERADOR"
+          }
+        },
+        {
+          "name": "Listar todas las flores (sin paginar)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/flowers/all",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "flowers", "all"]
+            },
+            "description": "Roles: ADMIN, SUPERVISOR, OPERADOR"
+          }
+        },
+        {
+          "name": "Obtener flor por ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/flowers/{{flowerId}}",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "flowers", "{{flowerId}}"]
+            },
+            "description": "Roles: ADMIN, SUPERVISOR, OPERADOR"
+          }
+        },
+        {
+          "name": "Crear flor/variedad (código autogenerado)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"flowerType\": \"Rosa\",\n  \"variety\": \"Freedom\",\n  \"color\": \"Rojo\",\n  \"stemLength\": 60,\n  \"stemsPerBouquet\": 25,\n  \"purchaseUnit\": \"RAMO\",\n  \"status\": \"ACTIVE\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/api/flowers",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "flowers"]
+            },
+            "description": "Rol requerido: ADMIN. El código TIPO-VARIEDAD-LONGITUD se genera automáticamente. purchaseUnit: RAMO|TALLO|CAJA. status: ACTIVE|INACTIVE."
+          }
+        },
+        {
+          "name": "Actualizar flor/variedad",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"flowerType\": \"Rosa\",\n  \"variety\": \"Freedom\",\n  \"color\": \"Rojo intenso\",\n  \"stemLength\": 60,\n  \"stemsPerBouquet\": 25,\n  \"purchaseUnit\": \"RAMO\",\n  \"status\": \"ACTIVE\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/api/flowers/{{flowerId}}",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "flowers", "{{flowerId}}"]
+            },
+            "description": "Rol requerido: ADMIN"
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Compras",
+      "item": [
+        {
+          "name": "Listar compras (paginado)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/purchases?page=1&pageSize=10",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "purchases"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" },
+                { "key": "search", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Roles: ADMIN, SUPERVISOR, OPERADOR"
+          }
+        },
+        {
+          "name": "Obtener compra por ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/purchases/{{purchaseId}}",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "purchases", "{{purchaseId}}"]
+            },
+            "description": "Roles: ADMIN, SUPERVISOR, OPERADOR"
+          }
+        },
+        {
+          "name": "Crear compra (a una finca)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"purchaseDate\": \"2026-07-20\",\n  \"farmId\": {{farmId}},\n  \"responsible\": \"Carlos Mendoza\",\n  \"observation\": \"Compra de evidencia para Postman\",\n  \"details\": [\n    {\n      \"flowerId\": {{flowerId}},\n      \"quantityBouquets\": 100,\n      \"stemsPerBouquet\": 25,\n      \"unitPrice\": 4.5\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/api/purchases",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "purchases"]
+            },
+            "description": "Roles: ADMIN, OPERADOR. farmId y flowerId deben existir en catalog-service (usa las variables de colección o consulta /api/farms/all y /api/flowers/all primero)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Logística - Embarques",
+      "item": [
+        {
+          "name": "Listar embarques (paginado)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/shipments?page=1&pageSize=10",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "shipments"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" },
+                { "key": "search", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Roles: ADMIN, SUPERVISOR, OPERADOR"
+          }
+        },
+        {
+          "name": "Listar todos los embarques (sin paginar)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/shipments/all",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "shipments", "all"]
+            },
+            "description": "Roles: ADMIN, SUPERVISOR, OPERADOR"
+          }
+        },
+        {
+          "name": "Obtener embarque por ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/shipments/{{shipmentId}}",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "shipments", "{{shipmentId}}"]
+            },
+            "description": "Roles: ADMIN, SUPERVISOR, OPERADOR"
+          }
+        },
+        {
+          "name": "Crear embarque",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"farmId\": {{farmId}},\n  \"shipmentDate\": \"2026-07-22\",\n  \"freightCompany\": \"UPS\",\n  \"airline\": \"Avianca Cargo\",\n  \"airWaybill\": \"729-99998888\",\n  \"flightNumber\": \"AV-8390\",\n  \"origin\": \"Quito\",\n  \"destination\": \"Miami\",\n  \"customer\": \"Flowers Market USA\",\n  \"boxes\": 20,\n  \"actualWeight\": 300,\n  \"volumetricWeight\": 320,\n  \"ratePerKg\": 2.4,\n  \"status\": \"DRAFT\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/api/shipments",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "shipments"]
+            },
+            "description": "Roles: ADMIN, OPERADOR. farmId debe existir en catalog-service (se resuelve el nombre de finca automáticamente). status: DRAFT|READY|SHIPPED|DELIVERED|CANCELLED. billableWeight y estimatedFreight se calculan en el backend."
+          }
+        },
+        {
+          "name": "Actualizar embarque",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"farmId\": {{farmId}},\n  \"shipmentDate\": \"2026-07-22\",\n  \"freightCompany\": \"UPS\",\n  \"airline\": \"Avianca Cargo\",\n  \"airWaybill\": \"729-99998888\",\n  \"flightNumber\": \"AV-8390\",\n  \"origin\": \"Quito\",\n  \"destination\": \"Miami\",\n  \"customer\": \"Flowers Market USA\",\n  \"boxes\": 20,\n  \"actualWeight\": 300,\n  \"volumetricWeight\": 320,\n  \"ratePerKg\": 2.4,\n  \"status\": \"SHIPPED\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/api/shipments/{{shipmentId}}",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "shipments", "{{shipmentId}}"]
+            },
+            "description": "Roles: ADMIN, OPERADOR"
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Logística - Costos",
+      "item": [
+        {
+          "name": "Listar costos (paginado)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/costs?page=1&pageSize=10",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "costs"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" },
+                { "key": "search", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Roles: ADMIN, SUPERVISOR, OPERADOR"
+          }
+        },
+        {
+          "name": "Listar todos los costos (sin paginar)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/costs/all",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "costs", "all"]
+            },
+            "description": "Roles: ADMIN, SUPERVISOR, OPERADOR"
+          }
+        },
+        {
+          "name": "Obtener costo por embarque",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/costs/shipment/{{shipmentId}}",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "costs", "shipment", "{{shipmentId}}"]
+            },
+            "description": "Roles: ADMIN, SUPERVISOR, OPERADOR"
+          }
+        },
+        {
+          "name": "Crear costo (asociado a un embarque)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shipmentId\": {{shipmentId}},\n  \"flowerCost\": 850.0,\n  \"airFreight\": 720.0,\n  \"boxes\": 20,\n  \"costPerBox\": 3.5,\n  \"costPerLabel\": 0.15,\n  \"taxBase\": 1500.0,\n  \"taxPercentage\": 12.0,\n  \"groundTransport\": 45.0,\n  \"insurance\": 30.0,\n  \"handling\": 25.0,\n  \"otherCosts\": 10.0,\n  \"otherCostsDescription\": \"Materiales de empaque adicionales\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/api/costs",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "costs"]
+            },
+            "description": "Roles: ADMIN, OPERADOR. shipmentId debe existir en logistics-service."
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - Ventas",
+      "item": [
+        {
+          "name": "Listar ventas (paginado)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/sales?page=1&pageSize=10",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "sales"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" },
+                { "key": "search", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Roles: ADMIN, SUPERVISOR (sin OPERADOR)"
+          }
+        },
+        {
+          "name": "Obtener venta por ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/sales/{{saleId}}",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "sales", "{{saleId}}"]
+            },
+            "description": "Roles: ADMIN, SUPERVISOR (sin OPERADOR)"
+          }
+        },
+        {
+          "name": "Crear venta (de un embarque)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shipmentId\": {{shipmentId}},\n  \"customer\": \"Flowers Market USA\",\n  \"saleDate\": \"2026-07-24\",\n  \"currency\": \"USD\",\n  \"paymentStatus\": \"PENDING\",\n  \"observation\": \"Venta de evidencia para Postman\",\n  \"details\": [\n    {\n      \"productId\": {{flowerId}},\n      \"productName\": \"Rosa Freedom 60cm\",\n      \"quantity\": 100,\n      \"unitPrice\": 7.2\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/api/sales",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "sales"]
+            },
+            "description": "Rol requerido: ADMIN. paymentStatus: PAID|PENDING|OVERDUE. shipmentId debe existir en logistics-service."
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - Rentabilidad",
+      "item": [
+        {
+          "name": "Listar rentabilidad (con filtros)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/profitability?dateFrom=2026-01-01&dateTo=2026-07-31",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "profitability"],
+              "query": [
+                { "key": "dateFrom", "value": "2026-01-01" },
+                { "key": "dateTo", "value": "2026-07-31" },
+                { "key": "farmName", "value": "", "disabled": true },
+                { "key": "customer", "value": "", "disabled": true },
+                { "key": "shipmentNumber", "value": "", "disabled": true },
+                { "key": "classification", "value": "EXCELLENT", "disabled": true },
+                { "key": "minMargin", "value": "10", "disabled": true },
+                { "key": "maxMargin", "value": "30", "disabled": true }
+              ]
+            },
+            "description": "Roles: ADMIN, SUPERVISOR. classification: EXCELLENT|GOOD|ACCEPTABLE|LOW."
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 - Dashboard",
+      "item": [
+        {
+          "name": "Resumen general",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/dashboard/summary",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "dashboard", "summary"]
+            },
+            "description": "Roles: ADMIN, SUPERVISOR, OPERADOR"
+          }
+        },
+        {
+          "name": "Gráficos (rentabilidad por finca, costos, tendencia)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/dashboard/charts",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "dashboard", "charts"]
+            },
+            "description": "Roles: ADMIN, SUPERVISOR, OPERADOR"
+          }
+        },
+        {
+          "name": "Embarques recientes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/dashboard/recent-shipments",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "dashboard", "recent-shipments"]
+            },
+            "description": "Roles: ADMIN, SUPERVISOR, OPERADOR"
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 - Asistente de IA",
+      "item": [
+        {
+          "name": "Preguntar al asistente",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"¿Cual fue la finca mas rentable este mes y por que?\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/api/ai/assistant",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "ai", "assistant"]
+            },
+            "description": "Roles: ADMIN, SUPERVISOR (sin OPERADOR). Responde usando datos reales de sales-service + un LLM local (Ollama gemma3:4b). Timeout largo (hasta 120s) mientras el modelo genera la respuesta."
+          }
+        }
+      ]
+    }
+  ]
+}

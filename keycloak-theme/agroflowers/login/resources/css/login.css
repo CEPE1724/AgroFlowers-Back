@@ -1,0 +1,113 @@
+html,
+body {
+  background: linear-gradient(135deg, #193b22 0%, #2a7038 55%, #b83885 140%) !important;
+  background-image: linear-gradient(135deg, #193b22 0%, #2a7038 55%, #b83885 140%) !important;
+  background-attachment: fixed !important;
+  min-height: 100%;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+.login-pf-page {
+  background: transparent !important;
+  background-image: none !important;
+}
+
+.login-pf-page-header {
+  background: transparent !important;
+  margin-bottom: 24px;
+}
+
+#kc-locale {
+  display: none !important;
+}
+
+#kc-header-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #ffffff !important;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: none !important;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+
+#kc-header-wrapper::before {
+  content: '';
+  display: inline-block;
+  width: 26px;
+  height: 26px;
+  border-radius: 50% 50% 50% 4px;
+  background: linear-gradient(135deg, #ffffff 0%, #f2a8d3 100%);
+  box-shadow: inset 0 0 0 3px #2a7038;
+}
+
+.card-pf {
+  background: #ffffff;
+  border: none;
+  border-radius: 18px;
+  box-shadow: 0 24px 60px rgba(10, 32, 18, 0.35);
+  padding: 40px 36px 32px;
+}
+
+.login-pf-header {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+#kc-page-title {
+  color: #193b22;
+  font-size: 21px;
+  font-weight: 700;
+}
+
+label.pf-c-form__label-text {
+  color: #22592e;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.pf-c-form-control {
+  border: 1px solid #bce1c1;
+  border-radius: 10px;
+  padding: 10px 12px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pf-c-form-control:focus {
+  border-color: #2a7038;
+  box-shadow: 0 0 0 3px rgba(42, 112, 56, 0.18);
+  outline: none;
+}
+
+#kc-form-buttons #kc-login,
+input[type='submit'].pf-c-button.pf-m-primary {
+  background-color: #2a7038 !important;
+  border-color: #2a7038 !important;
+  border-radius: 10px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: background-color 0.15s ease;
+}
+
+#kc-form-buttons #kc-login:hover {
+  background-color: #193b22 !important;
+  border-color: #193b22 !important;
+}
+
+#kc-form-options a,
+#kc-content a {
+  color: #b83885;
+  font-weight: 500;
+}
+
+#kc-form-options a:hover,
+#kc-content a:hover {
+  color: #922e6a;
+}
+
+.alert-error,
+.pf-c-alert.pf-m-danger {
+  border-radius: 10px;
+}
