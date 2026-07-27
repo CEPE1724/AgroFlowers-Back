@@ -298,6 +298,25 @@ services:
     networks:
       - agro-network
 
+  frontend:
+    build:
+      context: ../ProyectoFinal
+      dockerfile: Dockerfile
+      args:
+        PUBLIC_API_BASE_URL: http://localhost:8091/api
+        PUBLIC_KEYCLOAK_URL: http://localhost:8380
+        PUBLIC_KEYCLOAK_REALM: agroflowers-realm
+        PUBLIC_KEYCLOAK_CLIENT_ID: agroflowers-web
+        PUBLIC_USE_MOCKS: "false"
+    container_name: agroflowers-frontend
+    restart: unless-stopped
+    ports:
+      - "4321:80"
+    depends_on:
+      - nginx-agro
+    networks:
+      - agro-network
+
 volumes:
   keycloak-agro-postgres-data:
   catalog-postgres-data:

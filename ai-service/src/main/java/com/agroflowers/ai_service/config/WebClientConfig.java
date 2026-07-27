@@ -17,8 +17,8 @@ public class WebClientConfig {
     @Value("${sales-service.base-url}")
     private String salesServiceBaseUrl;
 
-    @Value("${ollama.base-url}")
-    private String ollamaBaseUrl;
+    @Value("${gemini.base-url}")
+    private String geminiBaseUrl;
 
     @Bean
     public WebClient salesServiceWebClient() {
@@ -28,16 +28,16 @@ public class WebClientConfig {
     }
 
     @Bean
-    public WebClient ollamaWebClient(@Qualifier("ollamaHttpClient") HttpClient httpClient) {
+    public WebClient geminiWebClient(@Qualifier("geminiHttpClient") HttpClient httpClient) {
         return WebClient.builder()
-                .baseUrl(ollamaBaseUrl)
+                .baseUrl(geminiBaseUrl)
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
     }
 
     @Bean
-    public HttpClient ollamaHttpClient() {
+    public HttpClient geminiHttpClient() {
         return HttpClient.create()
-                .responseTimeout(Duration.ofSeconds(90));
+                .responseTimeout(Duration.ofSeconds(30));
     }
 }

@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.agroflowers.ai_service.client.OllamaClient;
+import com.agroflowers.ai_service.client.GeminiClient;
 import com.agroflowers.ai_service.client.SalesDataClient;
 import com.agroflowers.ai_service.dto.AiAssistantResponseDto;
 import com.agroflowers.ai_service.dto.DashboardChartsDto;
@@ -28,11 +28,11 @@ public class AiAssistantServiceImpl implements AiAssistantService {
     );
 
     private final SalesDataClient salesDataClient;
-    private final OllamaClient ollamaClient;
+    private final GeminiClient geminiClient;
 
-    public AiAssistantServiceImpl(SalesDataClient salesDataClient, OllamaClient ollamaClient) {
+    public AiAssistantServiceImpl(SalesDataClient salesDataClient, GeminiClient geminiClient) {
         this.salesDataClient = salesDataClient;
-        this.ollamaClient = ollamaClient;
+        this.geminiClient = geminiClient;
     }
 
     @Override
@@ -44,7 +44,7 @@ public class AiAssistantServiceImpl implements AiAssistantService {
         String context = buildContext(summary, charts, profitability);
         String userPrompt = context + "\nPregunta del usuario: " + question;
 
-        String content = ollamaClient.generate(SYSTEM_PROMPT, userPrompt);
+        String content = geminiClient.generate(SYSTEM_PROMPT, userPrompt);
 
         return new AiAssistantResponseDto(content, detectWarning(content));
     }
