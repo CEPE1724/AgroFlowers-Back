@@ -17,8 +17,8 @@ public class WebClientConfig {
     @Value("${sales-service.base-url}")
     private String salesServiceBaseUrl;
 
-    @Value("${gemini.base-url}")
-    private String geminiBaseUrl;
+    @Value("${claude.base-url}")
+    private String claudeBaseUrl;
 
     @Bean
     public WebClient salesServiceWebClient() {
@@ -28,15 +28,15 @@ public class WebClientConfig {
     }
 
     @Bean
-    public WebClient geminiWebClient(@Qualifier("geminiHttpClient") HttpClient httpClient) {
+    public WebClient claudeWebClient(@Qualifier("claudeHttpClient") HttpClient httpClient) {
         return WebClient.builder()
-                .baseUrl(geminiBaseUrl)
+                .baseUrl(claudeBaseUrl)
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
     }
 
     @Bean
-    public HttpClient geminiHttpClient() {
+    public HttpClient claudeHttpClient() {
         return HttpClient.create()
                 .responseTimeout(Duration.ofSeconds(30));
     }
