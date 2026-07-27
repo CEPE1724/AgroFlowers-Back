@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_DB: keycloak
       POSTGRES_USER: keycloak
-      POSTGRES_PASSWORD: keycloak_pass
+      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
     volumes:
       - keycloak-agro-postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -27,9 +27,9 @@ services:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres-keycloak-agro:5432/keycloak
       KC_DB_USERNAME: keycloak
-      KC_DB_PASSWORD: keycloak_pass
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
       KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_HOSTNAME: http://localhost:8380
     ports:
       - "8380:8080"
@@ -60,7 +60,7 @@ services:
     environment:
       POSTGRES_DB: catalog_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 12345
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5435:5432"
     volumes:
@@ -84,7 +84,7 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-catalog:5432/catalog_db
       SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: 12345
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8380/realms/agroflowers-realm
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak-agro:8080/realms/agroflowers-realm/protocol/openid-connect/certs
       SPRING_DATA_REDIS_HOST: redis-agro
@@ -106,7 +106,7 @@ services:
     environment:
       POSTGRES_DB: purchase_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 12345
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5436:5432"
     volumes:
@@ -130,7 +130,7 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-purchase:5432/purchase_db
       SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: 12345
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8380/realms/agroflowers-realm
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak-agro:8080/realms/agroflowers-realm/protocol/openid-connect/certs
       CATALOG_SERVICE_BASE_URL: http://catalog-service:8083
@@ -151,7 +151,7 @@ services:
     environment:
       POSTGRES_DB: logistics_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 12345
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5437:5432"
     volumes:
@@ -175,7 +175,7 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-logistics:5432/logistics_db
       SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: 12345
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8380/realms/agroflowers-realm
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak-agro:8080/realms/agroflowers-realm/protocol/openid-connect/certs
       CATALOG_SERVICE_BASE_URL: http://catalog-service:8083
@@ -196,7 +196,7 @@ services:
     environment:
       POSTGRES_DB: sales_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 12345
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5438:5432"
     volumes:
@@ -220,7 +220,7 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-sales:5432/sales_db
       SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: 12345
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8380/realms/agroflowers-realm
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak-agro:8080/realms/agroflowers-realm/protocol/openid-connect/certs
       LOGISTICS_SERVICE_BASE_URL: http://logistics-service:8085
@@ -248,9 +248,9 @@ services:
       KEYCLOAK_SERVER_URL: http://keycloak-agro:8080
       KEYCLOAK_REALM: agroflowers-realm
       KEYCLOAK_ADMIN_CLIENT_ID: agroflowers-admin-client
-      KEYCLOAK_ADMIN_CLIENT_SECRET: HUpPYRoQQFk4UVJ1lJWntBZNHWY6XFaY
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET}
       KEYCLOAK_LOGIN_CLIENT_ID: agroflowers-service-client
-      KEYCLOAK_LOGIN_CLIENT_SECRET: AQhIbs5ZBW059xYG1czX3QlSlH6XNfxa
+      KEYCLOAK_LOGIN_CLIENT_SECRET: ${KEYCLOAK_LOGIN_CLIENT_SECRET}
     depends_on:
       keycloak-agro:
         condition: service_started
@@ -269,8 +269,8 @@ services:
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8380/realms/agroflowers-realm
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak-agro:8080/realms/agroflowers-realm/protocol/openid-connect/certs
       SALES_SERVICE_BASE_URL: http://sales-service:8086
-      GEMINI_API_KEY: "PON_AQUI_TU_API_KEY_DE_GEMINI"
-      GEMINI_MODEL: gemini-2.0-flash
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GEMINI_MODEL: ${GEMINI_MODEL}
     depends_on:
       keycloak-agro:
         condition: service_started

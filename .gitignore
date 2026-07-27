@@ -1,0 +1,19 @@
+# Maven build output (uno por microservicio)
+*/target/
+**/target/
+
+# environment variables
+.env
+!.env.example
+
+# IDE
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+
+# OS
+.DS_Store
+
+# logs
+*.log
