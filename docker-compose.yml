@@ -269,8 +269,10 @@ services:
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8380/realms/agroflowers-realm
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak-agro:8080/realms/agroflowers-realm/protocol/openid-connect/certs
       SALES_SERVICE_BASE_URL: http://sales-service:8086
-      CLAUDE_API_KEY: ${CLAUDE_API_KEY}
-      CLAUDE_MODEL: ${CLAUDE_MODEL}
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      OLLAMA_MODEL: gemma3:4b
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       keycloak-agro:
         condition: service_started

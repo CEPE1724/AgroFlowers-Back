@@ -17,8 +17,8 @@ public class WebClientConfig {
     @Value("${sales-service.base-url}")
     private String salesServiceBaseUrl;
 
-    @Value("${claude.base-url}")
-    private String claudeBaseUrl;
+    @Value("${ollama.base-url}")
+    private String ollamaBaseUrl;
 
     @Bean
     public WebClient salesServiceWebClient() {
@@ -28,16 +28,16 @@ public class WebClientConfig {
     }
 
     @Bean
-    public WebClient claudeWebClient(@Qualifier("claudeHttpClient") HttpClient httpClient) {
+    public WebClient ollamaWebClient(@Qualifier("ollamaHttpClient") HttpClient httpClient) {
         return WebClient.builder()
-                .baseUrl(claudeBaseUrl)
+                .baseUrl(ollamaBaseUrl)
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
     }
 
     @Bean
-    public HttpClient claudeHttpClient() {
+    public HttpClient ollamaHttpClient() {
         return HttpClient.create()
-                .responseTimeout(Duration.ofSeconds(30));
+                .responseTimeout(Duration.ofSeconds(90));
     }
 }

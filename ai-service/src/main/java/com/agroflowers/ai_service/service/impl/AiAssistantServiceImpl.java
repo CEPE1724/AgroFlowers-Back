@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.agroflowers.ai_service.client.ClaudeClient;
+import com.agroflowers.ai_service.client.OllamaClient;
 import com.agroflowers.ai_service.client.SalesDataClient;
 import com.agroflowers.ai_service.dto.AiAssistantResponseDto;
 import com.agroflowers.ai_service.dto.DashboardChartsDto;
@@ -28,11 +28,11 @@ public class AiAssistantServiceImpl implements AiAssistantService {
     );
 
     private final SalesDataClient salesDataClient;
-    private final ClaudeClient claudeClient;
+    private final OllamaClient ollamaClient;
 
-    public AiAssistantServiceImpl(SalesDataClient salesDataClient, ClaudeClient claudeClient) {
+    public AiAssistantServiceImpl(SalesDataClient salesDataClient, OllamaClient ollamaClient) {
         this.salesDataClient = salesDataClient;
-        this.claudeClient = claudeClient;
+        this.ollamaClient = ollamaClient;
     }
 
     @Override
@@ -44,7 +44,7 @@ public class AiAssistantServiceImpl implements AiAssistantService {
         String context = buildContext(summary, charts, profitability);
         String userPrompt = context + "\nPregunta del usuario: " + question;
 
-        String content = claudeClient.generate(SYSTEM_PROMPT, userPrompt);
+        String content = ollamaClient.generate(SYSTEM_PROMPT, userPrompt);
 
         return new AiAssistantResponseDto(content, detectWarning(content));
     }
@@ -90,7 +90,7 @@ public class AiAssistantServiceImpl implements AiAssistantService {
         if (notEmpty(profitability)) {
             sb.append("Detalle de embarques (rentabilidad individual):\n");
             profitability.stream()
-                    .limit(40)
+                    .limit(12)
                     .forEach(p -> sb.append("- ").append(p.shipmentNumber())
                             .append(" (").append(p.shipmentDate()).append("), finca=").append(nullSafe(p.farmName()))
                             .append(", cliente=").append(nullSafe(p.customer()))
