@@ -20,7 +20,7 @@ import com.agroflowers.catalog_service.dto.PagedResponseDto;
 import com.agroflowers.catalog_service.service.FarmService;
 
 import jakarta.validation.Valid;
-
+   
 @RestController
 @RequestMapping("/api/farms")
 public class FarmController {

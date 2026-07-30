@@ -33,7 +33,7 @@ public class OllamaClient {
     public OllamaClient(WebClient ollamaWebClient) {
         this.ollamaWebClient = ollamaWebClient;
     }
-
+      
     @CircuitBreaker(name = "ollama", fallbackMethod = "generateFallback")
     @Retry(name = "ollama")
     public String generate(String systemPrompt, String userPrompt) {

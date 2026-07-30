@@ -317,12 +317,34 @@ services:
     networks:
       - agro-network
 
+  pgadmin-agro:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin-agro
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+      PGADMIN_LISTEN_ADDRESS: 0.0.0.0
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin-agro-data:/var/lib/pgadmin
+    depends_on:
+      - postgres-keycloak-agro
+      - postgres-catalog
+      - postgres-purchase
+      - postgres-logistics
+      - postgres-sales
+    networks:
+      - agro-network
+
 volumes:
   keycloak-agro-postgres-data:
   catalog-postgres-data:
   purchase-postgres-data:
   logistics-postgres-data:
   sales-postgres-data:
+  pgadmin-agro-data:
 
 networks:
   agro-network:

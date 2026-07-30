@@ -28,7 +28,7 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-
+                  
                 .authorizeHttpRequests(auth -> auth
 
                         .requestMatchers(HttpMethod.GET, "/api/farms/**")

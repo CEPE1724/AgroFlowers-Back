@@ -42,7 +42,7 @@ public class FarmServiceImpl implements FarmService {
 
         return new PagedResponseDto<>(items, result.getTotalElements(), page, pageSize);
     }
-
+     
     @Override
     @Cacheable(cacheNames = "farmById", key = "#id")
     public FarmResponseDto getFarmById(Long id) {

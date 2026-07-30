@@ -87,7 +87,7 @@ public class KeycloakAdminServiceImpl implements KeycloakAdminService {
     @Override
     public TokenResponseDto login(LoginRequestDto request) {
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
-        form.add("grant_type", "password");
+        form.add("grant_type", "password");  
         form.add("client_id", loginClientId);
         form.add("client_secret", loginClientSecret);
         form.add("username", request.username());

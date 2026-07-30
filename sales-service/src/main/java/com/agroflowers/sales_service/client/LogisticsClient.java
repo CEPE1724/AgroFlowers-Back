@@ -24,7 +24,7 @@ public class LogisticsClient {
     public LogisticsClient(WebClient logisticsServiceWebClient) {
         this.logisticsServiceWebClient = logisticsServiceWebClient;
     }
-
+     
     @CircuitBreaker(name = "logisticsService", fallbackMethod = "getShipmentFallback")
     @Retry(name = "logisticsService")
     public ShipmentSummaryDto getShipmentById(Long shipmentId, String bearerToken) {
